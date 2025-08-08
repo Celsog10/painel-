@@ -79,7 +79,8 @@
 <body>
 
 <div class="video-area">
-    <iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1&mute=1&loop=1&playlist=dQw4w9WgXcQ" allowfullscreen></iframe>
+    <!-- Troque o ID_DO_VIDEO pelo seu vídeo -->
+    <iframe src="https://www.youtube.com/embed/ID_DO_VIDEO?autoplay=1&mute=1&loop=1&playlist=ID_DO_VIDEO" allowfullscreen></iframe>
 </div>
 
 <div class="info-area">
@@ -105,27 +106,27 @@ function atualizarRelogio() {
 setInterval(atualizarRelogio, 1000);
 atualizarRelogio();
 
-const canal = new BroadcastChannel("painel");
-let historico = [];
+const canal = new BroadcastChannel('painel');
 
 canal.onmessage = (event) => {
-    const chamada = event.data;
-    document.getElementById("chamadaAtual").innerHTML = `<h2>${chamada.nome}</h2><p>${chamada.local}</p>`;
+    if (event.data.limpar) {
+        document.getElementById("chamadaAtual").innerHTML = `<h2>Aguardando chamada...</h2><p></p>`;
+        document.getElementById("listaHistorico").innerHTML = "";
+        return;
+    }
 
-    historico.unshift(chamada);
-    if (historico.length > 3) historico.pop();
-    atualizarHistorico();
-};
+    if (event.data.nome && event.data.local) {
+        document.getElementById("chamadaAtual").innerHTML = `<h2>${event.data.nome}</h2><p>${event.data.local}</p>`;
 
-function atualizarHistorico() {
-    const lista = document.getElementById("listaHistorico");
-    lista.innerHTML = "";
-    historico.forEach(item => {
+        const lista = document.getElementById("listaHistorico");
         const li = document.createElement("li");
-        li.textContent = `${item.nome} - ${item.local}`;
-        lista.appendChild(li);
-    });
-}
+        li.textContent = `${event.data.nome} - ${event.data.local}`;
+        lista.insertBefore(li, lista.firstChild);
+        if (lista.childNodes.length > 3) {
+            lista.removeChild(lista.lastChild);
+        }
+    }
+};
 </script>
 
 </body>

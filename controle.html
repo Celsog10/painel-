@@ -43,13 +43,14 @@
     <option value="Consultório">Consultório</option>
 </select>
 <button onclick="chamarPaciente()">Chamar</button>
+<button onclick="limparPainel()">Limpar Painel</button>
 
 <audio id="bip">
-  <source src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg" type="audio/ogg">
+    <source src="https://www.soundjay.com/button/beep-07.wav" type="audio/wav">
 </audio>
 
 <script>
-const canal = new BroadcastChannel("painel");
+const canal = new BroadcastChannel('painel');
 
 function chamarPaciente() {
     let nome = document.getElementById("nomePaciente").value.trim();
@@ -59,37 +60,27 @@ function chamarPaciente() {
         return;
     }
 
-   const canal = new BroadcastChannel("painel");
-
-function chamarPaciente() {
-    let nome = document.getElementById("nomePaciente").value.trim();
-    let local = document.getElementById("localDestino").value;
-    if (nome === "") {
-        alert("Digite o nome do paciente!");
-        return;
-    }
-
-    const chamada = { nome, local };
-    canal.postMessage(chamada);
+    canal.postMessage({ nome, local });
 
     // Toca bip
-    const bip = document.getElementById("bip");
-    bip.play();
+    document.getElementById("bip").play();
 
-    // Aguarda o bip terminar (0.5s) antes de falar
-    setTimeout(() => {
-        const frase = `${nome}, dirigir-se à ${local}`;
-        const msg = new SpeechSynthesisUtterance(frase);
-        msg.lang = 'pt-BR';
-        window.speechSynthesis.speak(msg);
-    }, 500);
+    // Chama por voz se disponível
+    if ('speechSynthesis' in window) {
+        setTimeout(() => {
+            let fala = new SpeechSynthesisUtterance(`${nome}, dirigir-se à ${local}`);
+            fala.lang = 'pt-BR';
+            speechSynthesis.speak(fala);
+        }, 500);
+    }
 
-    // Limpa o campo
     document.getElementById("nomePaciente").value = "";
 }
 
+function limparPainel() {
+    canal.postMessage({ limpar: true });
+}
 </script>
-
 
 </body>
 </html>

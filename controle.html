@@ -59,21 +59,35 @@ function chamarPaciente() {
         return;
     }
 
+   const canal = new BroadcastChannel("painel");
+
+function chamarPaciente() {
+    let nome = document.getElementById("nomePaciente").value.trim();
+    let local = document.getElementById("localDestino").value;
+    if (nome === "") {
+        alert("Digite o nome do paciente!");
+        return;
+    }
+
     const chamada = { nome, local };
     canal.postMessage(chamada);
 
     // Toca bip
-    document.getElementById("bip").play();
+    const bip = document.getElementById("bip");
+    bip.play();
 
-    // Fala o nome do paciente e local
-    const frase = `${nome}, dirigir-se à ${local}`;
-    const msg = new SpeechSynthesisUtterance(frase);
-    msg.lang = 'pt-BR';
-    window.speechSynthesis.speak(msg);
+    // Aguarda o bip terminar (0.5s) antes de falar
+    setTimeout(() => {
+        const frase = `${nome}, dirigir-se à ${local}`;
+        const msg = new SpeechSynthesisUtterance(frase);
+        msg.lang = 'pt-BR';
+        window.speechSynthesis.speak(msg);
+    }, 500);
 
-    // Limpa campo
+    // Limpa o campo
     document.getElementById("nomePaciente").value = "";
 }
+
 </script>
 
 

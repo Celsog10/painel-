@@ -62,10 +62,20 @@ function chamarPaciente() {
     const chamada = { nome, local };
     canal.postMessage(chamada);
 
+    // Toca bip
     document.getElementById("bip").play();
+
+    // Fala o nome do paciente e local
+    const frase = `${nome}, dirigir-se à ${local}`;
+    const msg = new SpeechSynthesisUtterance(frase);
+    msg.lang = 'pt-BR';
+    window.speechSynthesis.speak(msg);
+
+    // Limpa campo
     document.getElementById("nomePaciente").value = "";
 }
 </script>
+
 
 </body>
 </html>

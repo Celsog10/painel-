@@ -4,32 +4,13 @@
 <meta charset="UTF-8">
 <title>Controle de Chamadas</title>
 <style>
-    body {
-        font-family: Arial, sans-serif;
-        background-color: #062C45;
-        color: white;
-        padding: 20px;
-    }
-    h1 {
-        text-align: center;
-    }
-    input, select, button {
-        padding: 10px;
-        margin: 10px 0;
-        width: 100%;
-        border: none;
-        border-radius: 5px;
-        font-size: 1em;
-    }
-    button {
-        background-color: #0DA5E0;
-        color: white;
-        font-weight: bold;
-        cursor: pointer;
-    }
-    button:hover {
-        background-color: #0BC1FF;
-    }
+    body { font-family: Arial, sans-serif; background-color: #062C45; color: white; padding: 20px; }
+    h1 { text-align: center; }
+    input, select, button { padding: 10px; margin: 10px 0; width: 100%; border: none; border-radius: 5px; font-size: 1em; }
+    button { background-color: #0DA5E0; color: white; font-weight: bold; cursor: pointer; }
+    button:hover { background-color: #0BC1FF; }
+    button.danger { background-color: #D9534F; }
+    button.danger:hover { background-color: #C9302C; }
 </style>
 </head>
 <body>
@@ -43,43 +24,75 @@
     <option value="Consultório">Consultório</option>
 </select>
 <button onclick="chamarPaciente()">Chamar</button>
-<button onclick="limparPainel()">Limpar Painel</button>
+<button class="danger" onclick="limparPainel()">Limpar Painel</button>
 
 <audio id="bip">
     <source src="https://www.soundjay.com/button/beep-07.wav" type="audio/wav">
 </audio>
 
-<script>
-const canal = new BroadcastChannel('painel');
+<!-- Firebase SDK v8 (compat) -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
-function chamarPaciente() {
-    let nome = document.getElementById("nomePaciente").value.trim();
+<script>
+  // Sua configuração do Firebase
+  const firebaseConfig = {
+    apiKey: "AIzaSyAV0U590Qw1F1pzvrqPKCAY_zKg4-_VSPU",
+    authDomain: "painel-clinica.firebaseapp.com",
+    databaseURL: "https://painel-clinica-default-rtdb.firebaseio.com",
+    projectId: "painel-clinica",
+    storageBucket: "painel-clinica.firebasestorage.app",
+    messagingSenderId: "290086758169",
+    appId: "1:290086758169:web:b524b43c550e16821e4788"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  function chamarPaciente() {
+    const nomeEl = document.getElementById("nomePaciente");
+    let nome = nomeEl.value.trim();
     let local = document.getElementById("localDestino").value;
     if (nome === "") {
-        alert("Digite o nome do paciente!");
-        return;
+      alert("Digite o nome do paciente!");
+      return;
     }
 
-    canal.postMessage({ nome, local });
+    const chamada = { nome, local, hora: new Date().toLocaleTimeString() };
 
-    // Toca bip
-    document.getElementById("bip").play();
+    // atualiza última chamada
+    db.ref("ultimaChamada").set(chamada).catch(err=>console.error(err));
 
-    // Chama por voz se disponível
+    // atualiza histórico (máx 3)
+    db.ref("historico").once("value").then(snap => {
+      let hist = snap.val() || [];
+      if (!Array.isArray(hist)) hist = [];
+      hist.unshift(chamada);
+      if (hist.length > 3) hist = hist.slice(0,3);
+      db.ref("historico").set(hist).catch(err=>console.error(err));
+    }).catch(err=>console.error(err));
+
+    // toca bip e fala (se disponível)
+    const bip = document.getElementById("bip");
+    bip.play().catch(()=>{});
+
     if ('speechSynthesis' in window) {
-        setTimeout(() => {
-            let fala = new SpeechSynthesisUtterance(`${nome}, dirigir-se à ${local}`);
-            fala.lang = 'pt-BR';
-            speechSynthesis.speak(fala);
-        }, 500);
+      setTimeout(()=>{
+        const frase = `${nome}, dirigir-se à ${local}`;
+        const u = new SpeechSynthesisUtterance(frase);
+        u.lang = "pt-BR";
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(u);
+      }, 600);
     }
 
-    document.getElementById("nomePaciente").value = "";
-}
+    nomeEl.value = "";
+  }
 
-function limparPainel() {
-    canal.postMessage({ limpar: true });
-}
+  function limparPainel() {
+    if (!confirm("Tem certeza que deseja limpar o painel?")) return;
+    db.ref("ultimaChamada").set(null).catch(err=>console.error(err));
+    db.ref("historico").set([]).catch(err=>console.error(err));
+  }
 </script>
 
 </body>

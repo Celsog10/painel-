@@ -4,78 +4,156 @@
 <meta charset="UTF-8">
 <title>Painel da Clínica</title>
 <style>
-    body { margin: 0; font-family: Arial, sans-serif; background-color: #0B3D5C; color: white; display: flex; height: 100vh; }
-    .video-area { flex: 2; background-color: black; }
-    iframe { width: 100%; height: 100%; border: none; }
-    .info-area { flex: 1; display: flex; flex-direction: column; padding: 10px; box-sizing: border-box; background-color: #0B3D5C; }
-    .logo { text-align: center; margin-bottom: 10px; }
-    .logo img { max-width: 80%; }
-    .relogio { text-align: center; font-size: 1.8em; margin-bottom: 10px; }
-    .chamada-atual { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; background-color: #105E8B; border-radius: 10px; margin-bottom: 10px; text-align: center; padding: 20px; }
-    .chamada-atual h2 { font-size: 2em; margin: 0; animation: piscar 1s infinite alternate; }
-    .chamada-atual p { font-size: 1.5em; margin: 5px 0 0 0; }
-    @keyframes piscar { 0% { color: yellow; } 100% { color: white; } }
-    .historico { background-color: #084C73; padding: 10px; border-radius: 10px; }
-    .historico h3 { margin-top: 0; }
+    body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background-color: #0B3D5C;
+        color: white;
+        display: flex;
+        height: 100vh;
+    }
+    .video-area {
+        flex: 2;
+        background-color: black;
+    }
+    iframe {
+        width: 100%;
+        height: 100%;
+        border: none;
+    }
+    .info-area {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        padding: 10px;
+        box-sizing: border-box;
+        background-color: #0B3D5C;
+    }
+    .logo {
+        text-align: center;
+        margin-bottom: 10px;
+    }
+    .logo img {
+        max-width: 80%;
+    }
+    .relogio {
+        text-align: center;
+        font-size: 1.8em;
+        margin-bottom: 10px;
+    }
+    .chamada-atual {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background-color: #105E8B;
+        border-radius: 10px;
+        margin-bottom: 10px;
+        text-align: center;
+        padding: 20px;
+    }
+    .chamada-atual h2 {
+        font-size: 2em;
+        margin: 0;
+        animation: piscar 1s infinite alternate;
+    }
+    .chamada-atual p {
+        font-size: 1.5em;
+        margin: 5px 0 0 0;
+    }
+    @keyframes piscar {
+        0% { color: yellow; }
+        100% { color: white; }
+    }
+    .historico {
+        background-color: #084C73;
+        padding: 10px;
+        border-radius: 10px;
+    }
+    .historico h3 {
+        margin-top: 0;
+    }
 </style>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyAV0U590Qw1F1pzvrqPKCAY_zKg4-_VSPU",
+  authDomain: "painel-clinica.firebaseapp.com",
+  databaseURL: "https://painel-clinica-default-rtdb.firebaseio.com",
+  projectId: "painel-clinica",
+  storageBucket: "painel-clinica.firebasestorage.app",
+  messagingSenderId: "290086758169",
+  appId: "1:290086758169:web:b524b43c550e16821e4788"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+function atualizarRelogio() {
+    const agora = new Date();
+    document.getElementById("relogio").textContent = agora.toLocaleTimeString();
+}
+setInterval(atualizarRelogio, 1000);
+atualizarRelogio();
+
+function falarTexto(texto) {
+    const synth = window.speechSynthesis;
+    const utterThis = new SpeechSynthesisUtterance(texto);
+    utterThis.lang = "pt-BR";
+    synth.speak(utterThis);
+}
+
+db.ref("chamadaAtual").on("value", snapshot => {
+    const chamada = snapshot.val();
+    if (chamada) {
+        document.getElementById("chamadaAtual").innerHTML = `<h2>${chamada.nome}</h2><p>${chamada.local}</p>`;
+        document.getElementById("bip").play();
+        setTimeout(() => {
+            falarTexto(`${chamada.nome}, dirigir-se à ${chamada.local}`);
+        }, 800);
+    } else {
+        document.getElementById("chamadaAtual").innerHTML = "<h2>Aguardando chamada...</h2><p></p>";
+    }
+});
+
+db.ref("historico").on("value", snapshot => {
+    const lista = document.getElementById("listaHistorico");
+    lista.innerHTML = "";
+    snapshot.forEach(child => {
+        const item = child.val();
+        const li = document.createElement("li");
+        li.textContent = `${item.nome} - ${item.local}`;
+        lista.appendChild(li);
+    });
+});
+</script>
 </head>
 <body>
 
 <div class="video-area">
-    <!-- Troque ID_DO_VIDEO pelo ID do seu vídeo no YouTube -->
-    <iframe id="ytplayer" src="https://www.youtube.com/embed/c1mxv_GcUkU?autoplay=1&mute=1&loop=1&playlist=c1mxv_GcUkU" allowfullscreen></iframe>
+    <iframe src="https://www.youtube.com/embed/c1mxv_GcUkU?autoplay=1&mute=1&loop=1&playlist=c1mxv_GcUkU" allowfullscreen></iframe>
 </div>
 
 <div class="info-area">
-    <div class="logo"><img src="logo.png" alt="Logo da Clínica"></div>
+    <div class="logo">
+        <img src="logo.png" alt="Logo da Clínica">
+    </div>
     <div class="relogio" id="relogio"></div>
-    <div class="chamada-atual" id="chamadaAtual"><h2>Aguardando chamada...</h2><p></p></div>
-    <div class="historico"><h3>Últimas Chamadas</h3><ul id="listaHistorico"></ul></div>
+    <div class="chamada-atual" id="chamadaAtual">
+        <h2>Aguardando chamada...</h2>
+        <p></p>
+    </div>
+    <div class="historico">
+        <h3>Últimas Chamadas</h3>
+        <ul id="listaHistorico"></ul>
+    </div>
 </div>
 
-<!-- Firebase SDK v8 (compat) -->
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-
-<script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyAV0U590Qw1F1pzvrqPKCAY_zKg4-_VSPU",
-    authDomain: "painel-clinica.firebaseapp.com",
-    databaseURL: "https://painel-clinica-default-rtdb.firebaseio.com",
-    projectId: "painel-clinica",
-    storageBucket: "painel-clinica.firebasestorage.app",
-    messagingSenderId: "290086758169",
-    appId: "1:290086758169:web:b524b43c550e16821e4788"
-  };
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.database();
-
-  function atualizarRelogio(){ document.getElementById("relogio").textContent = new Date().toLocaleTimeString(); }
-  setInterval(atualizarRelogio,1000); atualizarRelogio();
-
-  // Ouve última chamada
-  db.ref("ultimaChamada").on("value", snap => {
-    const chamada = snap.val();
-    const area = document.getElementById("chamadaAtual");
-    if (chamada) {
-      area.innerHTML = `<h2>${chamada.nome}</h2><p>${chamada.local}</p>`;
-    } else {
-      area.innerHTML = `<h2>Aguardando chamada...</h2><p></p>`;
-    }
-  });
-
-  // Ouve histórico
-  db.ref("historico").on("value", snap => {
-    const hist = snap.val() || [];
-    const lista = document.getElementById("listaHistorico");
-    lista.innerHTML = "";
-    hist.forEach(item => {
-      const li = document.createElement("li");
-      li.textContent = `${item.nome} - ${item.local}`;
-      lista.appendChild(li);
-    });
-  });
-</script>
+<audio id="bip">
+    <source src="https://www.soundjay.com/button/beep-07.wav" type="audio/wav">
+</audio>
 
 </body>
 </html>
